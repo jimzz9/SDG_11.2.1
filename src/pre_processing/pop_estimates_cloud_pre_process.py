@@ -432,6 +432,9 @@ def age_pop_by_sex(con: duckdb.DuckDBPyConnection, year_table_name, config, year
     
     age_lst = config["age_lst"]
     
+    quoted_age_lst = [f'"{age}"' for age in age_lst]
+    quoted_age_str = ", ".join(quoted_age_lst)
+    
     
     # Generate a unique name for the temporary table
     # table_name = f"temp_{uuid.uuid4().hex}"
@@ -442,23 +445,26 @@ def age_pop_by_sex(con: duckdb.DuckDBPyConnection, year_table_name, config, year
 
     # Construct the SQL query for the males sex group
     male_query = f"""
-        SELECT OA11CD, {", ".join(age_lst)}  
+        SELECT OA11CD, {quoted_age_str}  
         FROM {year_table_name}
         WHERE Sex = 1;"""
 
     # Construct the SQL query for the females sex group
     female_query = f"""
-        SELECT OA11CD, {", ".join(age_lst)}  
+        SELECT OA11CD, {quoted_age_str}  
         FROM {year_table_name}
         WHERE Sex = 2;"""
         
     # Construct the SQL query for both sex groups
-    age_sum = ", ".join(f"SUM({age}) AS {age}" for age in age_lst)
+    age_sum = ", ".join(f"SUM(CASE WHEN Sex = 1 THEN {age} ELSE 0 END) + SUM(CASE WHEN Sex = 2 THEN {age} ELSE 0 END) AS {age}" for age in quoted_age_lst)
 
+    # Modified persons_query
     persons_query = f"""
-        SELECT OA11CD, LAD11CD, {age_sum}  
+        SELECT OA11CD, 
+            {age_sum}
         FROM {year_table_name}
-        GROUP BY OA11CD, LAD11CD;"""
+        GROUP BY OA11CD;
+    """
 
     # Get a dataframe for sex == 1
     duckdbLogger.info("Executing query for males table")
@@ -557,7 +563,7 @@ def main():
 
     yearly_table_names = create_yearly_tables_all_regions(con, table_name_list)
     
-    year_table_name = yearly_table_names[10]
+    year_table_name = yearly_table_names[9]
 
     year = 2011
 

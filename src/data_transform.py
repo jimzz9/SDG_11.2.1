@@ -148,8 +148,14 @@ def served_proportions_disagg(pop_df: pd.DataFrame,
 
     pop_sums = {}
     for col in cols_lst:
+        if col == "male":
+            pop_df_col = "males_pop"
+        elif col == "female":
+            pop_df_col = "fem_pop"
+        else:
+            pop_df_col = 'pop_count'
         # Total pop
-        total_pop = int(pop_df[col].sum())
+        total_pop = int(pop_df[pop_df_col].sum())
         # Served pop
         servd_pop = int(pop_in_poly_df[col].sum())
         # Unserved pop
@@ -247,6 +253,9 @@ def disab_disagg(disability_df, la_pop_df):
     # OA11CD col
     disab_prop_df = disability_df[[
         'OA11CD', 'proportion_disabled', 'proportion_non-disabled']]
+
+    # Drop any rows in the la_pop_df with None values in the OA11CD col
+    la_pop_df = la_pop_df.dropna(subset=["OA11CD"])
 
     # Merge the proportion disability df into main the pop df with a left join
     la_pop_df = la_pop_df.merge(disab_prop_df, on='OA11CD', how="left")

@@ -60,12 +60,6 @@ ew_df = di.read_file_if_exists(ew_df_path, gpd.read_file)
 ew_disability_df = di.read_file_if_exists(ew_disability_df_path, lambda path: di.feath_to_df('ew_disability_df', path))
 
 
-stops_geo_df = di.read_file_if_exists(stops_geo_df_path, gpd.read_file)
-ew_la_df = di.read_file_if_exists(ew_la_df_path, gpd.read_file)
-ew_df = di.read_file_if_exists(ew_df_path, gpd.read_file)
-ew_disability_df = di.read_file_if_exists(ew_disability_df_path, lambda path: di.feath_to_df('ew_disability_df', path))
-
-
 
 if __name__ == "__main__":
 
@@ -76,9 +70,9 @@ if __name__ == "__main__":
 
     # selecting random LA for dev purposes
     # eventually will iterate through all LA's
-    random_la = random.choice(list_local_auth)
+    # random_la = random.choice(list_local_auth)
 
-    list_local_auth = [random_la]
+    # list_local_auth = ["Middlesborough"]
 
 
     # define output dicts to capture dfs
@@ -105,26 +99,26 @@ if __name__ == "__main__":
         stops_in_la_poly_buffer = gs.buffer_points(stops_in_la_poly)
 
         # Subset population data to local authority
-        ew_df = ew_df.loc[ew_df[lad_col] == local_auth]
+        local_df = ew_df.loc[ew_df[lad_col] == local_auth]
 
         # Convert population df into a geodataframe
-        ew_df = gpd.GeoDataFrame(ew_df, geometry='geometry', crs=DEFAULT_CRS)
+        local_df = gpd.GeoDataFrame(ew_df, geometry='geometry', crs=DEFAULT_CRS)
 
         # Diasggregate disability data and join into population df
         # --------------------------------------------------------
-        ew_df = dt.disab_disagg(ew_disability_df, ew_df)
+        local_df = dt.disab_disagg(ew_disability_df, local_df)
 
         # renaming the dodgy col names with their replacements
         replacements = {"males_pop": "male",
                         "fem_pop": "female"}
-        ew_df.rename(columns=replacements, inplace=True)
+        local_df.rename(columns=replacements, inplace=True)
 
         # Extract the population served by public transport
         # -------------------------------------------------
 
         # find all the pop centroids which are in the buffered stops
         pwc_in_stops_buffer_df = (
-            gs.find_points_in_poly(ew_df, stops_in_la_poly_buffer)
+            gs.find_points_in_poly(local_df, stops_in_la_poly_buffer)
         )
 
         # Dedupe the df because many OAs are appearing multiple times

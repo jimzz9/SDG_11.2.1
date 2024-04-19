@@ -208,10 +208,15 @@ def create_all_ages_col(con: DuckDBPyConnection, table_name: str, year: int, con
 
 def rename_table_column(con, table_name, old_col_name, new_col_name):
     
-    query = f"ALTER TABLE {table_name} RENAME COLUMN \"{old_col_name}\" TO \"{new_col_name}\";"
+    duckdbLogger.info(f"Renaming table column {old_col_name} to {new_col_name}")
     
-    con.execute(query)
-
+    if old_col_name in con.execute(f"SELECT * FROM {table_name} LIMIT 0").df():
+        duckdbLogger.debug(f"{old_col_name} exists in {table_name}. Renaming column")
+        query = f"ALTER TABLE {table_name} RENAME COLUMN \"{old_col_name}\" TO \"{new_col_name}\";"
+        con.execute(query)
+    else:
+        duckdbLogger.debug(f"{old_col_name} does not exist in {table_name}")
+        
 def age_pop_by_sex(con: duckdb.DuckDBPyConnection, table_name, year: int):
     """"Uses SQL to get the data for three sex groups and drops the sex column.
 
@@ -336,7 +341,6 @@ def main():
 
     # For each of those years, load the data for all regions into a temp table
     # and return the name of the temp table
-    temp_table_names = []
     duckdbLogger.info("Starting to load data for each year into a temp table")
     for year in years[:1]:
         duckdbLogger.info(f"Extracting data for year {year}")
@@ -362,7 +366,7 @@ def main():
                 old_column_name = f"{i:02d}"  # This will be '00', '01', '02', ..., '09'
                 new_column_name = str(i)  # This will be '0', '1', '2', ..., '9'
                 rename_table_column(con, all_three_tables[name], old_column_name, new_column_name)
-                          
+                            
             create_all_ages_col(con, all_three_tables[name], year, config)
         
             

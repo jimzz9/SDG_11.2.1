@@ -125,8 +125,11 @@ if __name__ == "__main__":
         # (i.e. they are served by multiple stops)
         pwc_in_stops_buffer_df = (
             pwc_in_stops_buffer_df.drop_duplicates(subset="OA11CD"))
+        
+        # Rename male female columns in pwc_in_stops_buffer_df
+        pwc_in_stops_buffer_df.rename(columns=replacements, inplace=True)
 
-        # Count the population served by public transport
+        # Count the p.opulation served by public transport
         served = pwc_in_stops_buffer_df.pop_count.sum()
         full_pop = ew_df.pop_count.sum()
         not_served = full_pop - served
